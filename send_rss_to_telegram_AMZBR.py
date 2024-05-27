@@ -66,6 +66,7 @@ def parse_json_feed(response_content):
     return items
 
 def parse_rss(feed_url):
+    print(f"Fetching RSS feed from: {feed_url}")
     response = requests.get(feed_url)
     if response.status_code != 200:
         print(f"Failed to fetch RSS feed: {response.status_code}")
@@ -73,8 +74,10 @@ def parse_rss(feed_url):
     
     content_type = response.headers.get('Content-Type', '')
     if 'application/json' in content_type:
+        print("Detected JSON format.")
         return parse_json_feed(response.content)
     else:
+        print("Detected XML format.")
         return parse_xml_feed(response.content)
 
 def main():
@@ -89,6 +92,7 @@ def main():
             message += f"<a href='{item['image_url']}'>&#8205;</a>\n"
         if item['content_html']:
             message += f"{item['content_html']}\n"
+        print(f"Sending message: {message}")
         send_message(TELEGRAM_BOT_TOKEN, CHAT_ID, message)
         print(f"Sent message: {message}")
         print(f"RSS Item - Title: {item['title']}, Link: {item['link']}, Image: {item['image_url']}, Content HTML: {item['content_html']}")
