@@ -22,9 +22,9 @@ jobs:
 
       - name: Run script
         env:
-          TELEGRAM_BOT_TOKEN_PALAVRADODIA: ${{ secrets.TELEGRAM_BOT_TOKEN_PALAVRADODIA }}
-          RSS_FEED_URLPALAVRADODIA: ${{ secrets.RSS_FEED_URLPALAVRADODIA }}
-          TELEGRAM_CHAT_IDPALAVRADODIA: ${{ secrets.TELEGRAM_CHAT_IDPALAVRADODIA }}
+          TELEGRAM_BOT_TOKEN_AMZBR: ${{ secrets.TELEGRAM_BOT_TOKEN_AMZBR }}
+          RSS_FEED_URLAMZBR: ${{ secrets.RSS_FEED_URLAMZBR }}
+          TELEGRAM_CHAT_IDAMZBR: ${{ secrets.TELEGRAM_CHAT_IDAMZBR }}
         run: python on:
   schedule:
     - cron: "*/15 * * * *"
