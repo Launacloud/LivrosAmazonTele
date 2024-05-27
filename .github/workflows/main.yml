@@ -29,7 +29,7 @@ jobs:
         TELEGRAM_BOT_TOKEN_AMZBR: ${{ secrets.TELEGRAM_BOT_TOKEN_AMZBR }}
         RSS_FEED_URLAMZBR: ${{ secrets.RSS_FEED_URLAMZBR }}
         TELEGRAM_CHAT_IDAMZBR: ${{ secrets.TELEGRAM_CHAT_IDAMZBR }}
-      run: python send_rss_to_telegram_palavra.py to send_rss_to_telegram_AMZBR.py
+      run: python to send_rss_to_telegram_AMZBR.py
 
   build_actionsflow:
     runs-on: ubuntu-latest
