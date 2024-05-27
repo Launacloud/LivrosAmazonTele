@@ -3,9 +3,9 @@ import requests
 import xml.etree.ElementTree as ET
 import json
 
-TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN_PALAVRADODIA')
-RSS_FEED_URL = os.getenv('RSS_FEED_URLPALAVRADODIA')
-CHAT_ID = os.getenv('TELEGRAM_CHAT_IDPALAVRADODIA')
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN_AMZBR')
+RSS_FEED_URL = os.getenv('RSS_FEED_URLAMZBR')
+CHAT_ID = os.getenv('TELEGRAM_CHAT_IDAMZBR')
 
 def send_message(bot_token, chat_id, text):
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
