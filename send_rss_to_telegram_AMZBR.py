@@ -71,14 +71,11 @@ def parse_json_feed(feed_url):
 def main():
     """Main function to fetch feeds, check for new items, and send them to Telegram."""
     # Load cache
+    cached_data = set()
     if os.path.exists('./sent_items_cache.json'):
         with open('./sent_items_cache.json', 'r') as cache_file:
             try:
-                cached_data = json.load(cache_file)
-                if isinstance(cached_data, list):
-                    SENT_ITEMS_CACHE.update(tuple(item.values()) for item in cached_data)
-                else:
-                    print("Invalid cache format. Skipping cache loading.")
+                cached_data = set(json.load(cache_file))
             except json.JSONDecodeError:
                 print("Error decoding cache file. Skipping cache loading.")
 
@@ -101,7 +98,7 @@ def main():
         return
 
     # Get new items by comparing with cached items
-    new_items = [item for item in feed_items if tuple(item.values()) not in SENT_ITEMS_CACHE]
+    new_items = [item for item in feed_items if tuple(item.values()) not in cached_data]
 
     if not new_items:
         print("No new feed items found since last run.")
@@ -115,9 +112,10 @@ def main():
         print(f"Sent message: {message}")
 
     # Update the cache with the titles of the sent items
-    SENT_ITEMS_CACHE.update(tuple(item.values()) for item in new_items)
+    cached_data.update(tuple(item.values()) for item in new_items)
     with open('./sent_items_cache.json', 'w') as cache_file:
-        json.dump(list(SENT_ITEMS_CACHE), cache_file)
+        json.dump(list(cached_data), cache_file)
 
 if __name__ == "__main__":
     main()
+
