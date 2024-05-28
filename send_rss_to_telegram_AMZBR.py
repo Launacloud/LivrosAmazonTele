@@ -73,7 +73,11 @@ def main():
     # Load cache
     if os.path.exists('./sent_items_cache.json'):
         with open('./sent_items_cache.json', 'r') as cache_file:
-            SENT_ITEMS_CACHE.update(json.load(cache_file))
+            try:
+                SENT_ITEMS_CACHE.update(json.load(cache_file))
+            except json.JSONDecodeError:
+                # If the cache file is empty or corrupted, continue with an empty cache
+                pass
 
     # Fetch feed
     response = requests.head(RSS_FEED_URL)  # Send a HEAD request to get the content type
