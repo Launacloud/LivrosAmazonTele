@@ -1,6 +1,17 @@
 import os
-import requests
+import subprocess
 import json
+import xml.etree.ElementTree as ET
+
+# Check if requests module is installed
+try:
+    import requests
+except ImportError:
+    # If requests module is not installed, attempt to install it
+    print("Requests module is not installed. Attempting to install...")
+    subprocess.check_call(["pip", "install", "requests"])
+    # Once installed, import requests again
+    import requests
 
 # Telegram bot token and chat ID
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN_AMZBR')
@@ -22,20 +33,24 @@ def send_message(bot_token, chat_id, text):
     return response
 
 def parse_rss(feed_url):
-    """Parse the JSON feed and return new items."""
+    """Parse the RSS feed and return new items."""
     response = requests.get(feed_url)
     if response.status_code != 200:
-        print(f"Failed to fetch JSON feed: {response.status_code}")
+        print(f"Failed to fetch RSS feed: {response.status_code}")
         return []
-
-    try:
-        feed_data = response.json()
-        items = feed_data.get('items', [])
-        return items
-    except json.JSONDecodeError as e:
-        print(f"Failed to parse JSON response: {e}")
-        print(f"Response content: {response.content}")
-        return []
+    
+    root = ET.fromstring(response.content)
+    items = []
+    for item in root.findall('.//item'):
+        title = item.find('title').text
+        link = item.find('link').text if item.find('link') is not None else ''
+        description = item.find('description').text if item.find('description') is not None else ''
+        items.append({
+            'title': title,
+            'link': link,
+            'description': description
+        })
+    return items
 
 def load_cache(cache_file):
     """Load the cache file if it exists."""
@@ -50,29 +65,28 @@ def save_cache(cache_file, items):
         json.dump(items, f, indent=4)
 
 def main():
-    """Main function to fetch JSON feed, check cache, and send new items to Telegram."""
-    # Fetch JSON feed
-    rss_items = parse_rss(RSS_FEED_URL)
-    if not rss_items:
-        print("No JSON items found or failed to parse JSON feed.")
-        return
-
+    """Main function to fetch RSS feed, check cache, and send new items to Telegram."""
     # Load cache
     cache = load_cache(CACHE_FILE_PATH)
-
+    
+    # Fetch RSS feed
+    rss_items = parse_rss(RSS_FEED_URL)
+    if not rss_items:
+        print("No RSS items found or failed to parse RSS feed.")
+        return
+    
     # Filter new items
     new_items = [item for item in rss_items if item not in cache]
     if not new_items:
-        print("No new JSON items found.")
+        print("No new RSS items found.")
         return
-
+    
     # Send new items
     for item in new_items:
-        url = item.get('url') or item.get('link')  # Use 'url' if available, otherwise use 'link'
-        message = f"<b>{item['title']}</b>\n{url}\n{item.get('content_html', '')}"
+        message = f"<b>{item['title']}</b>\n{item['link']}\n{item.get('description', '')}"
         send_message(TELEGRAM_BOT_TOKEN, CHAT_ID, message)
         print(f"Sent message: {message}")
-
+    
     # Update cache with new items
     cache.extend(new_items)
     save_cache(CACHE_FILE_PATH, cache)
