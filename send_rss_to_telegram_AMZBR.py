@@ -7,6 +7,7 @@ from datetime import datetime
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN_AMZBR')
 CHAT_ID = os.getenv('TELEGRAM_CHAT_IDAMZBR')
 RSS_FEED_URL = os.getenv('RSS_FEED_URLAMZBR')
+CACHE_KEY = 'cache-sent-items'
 
 def send_message(bot_token, chat_id, text):
     """Send a message to the specified Telegram chat."""
@@ -64,41 +65,33 @@ def parse_json_feed(feed_url):
             'pub_date': pub_date
         })
     return items
+
 def main():
     """Main function to fetch feeds, check for new items, and send them to Telegram."""
-    response = requests.head(RSS_FEED_URL)  # Send a HEAD request to get the content type
-    content_type = response.headers.get('content-type')
-    print(f"Content Type: {content_type}")  # Print the content type for debugging
+    # Fetch XML feed
+    xml_feed_items = parse_xml_feed(RSS_FEED_URL)
+    # Fetch JSON feed
+    json_feed_items = parse_json_feed(RSS_FEED_URL)
     
-    if 'xml' in content_type:
-        print("Content Type is XML.")
-        feed_items = parse_xml_feed(RSS_FEED_URL)
-    elif 'json' in content_type:
-        print("Content Type is JSON.")
-        feed_items = parse_json_feed(RSS_FEED_URL)
-    else:
-        print("Unsupported content type.")
-        return
+    # Combine items from both feeds
+    feed_items = xml_feed_items + json_feed_items
     
     if not feed_items:
         print("No feed items found or failed to parse feeds.")
         return
     
-    print("Feed Items:")
-    print(feed_items)  # Print the feed items for debugging
+    # Check if cache exists
+    if CACHE_KEY in os.environ:
+        cached_items = os.getenv(CACHE_KEY).split(',')
+    else:
+        cached_items = []
     
-    # Get the last run time
-    last_run_time = datetime.now()
-    print(f"Last Run Time: {last_run_time}")  # Print the last run time for debugging
+    # Get the new items by comparing with the cached items
+    new_items = [item for item in feed_items if item['title'] not in cached_items]
     
-    # Filter new items based on publication time and last run time
-    new_items = [item for item in feed_items if datetime.strptime(item['pub_date'], '%a, %d %b %Y %H:%M:%S %z') > last_run_time]
     if not new_items:
         print("No new feed items found since last run.")
         return
-    
-    print("New Items:")
-    print(new_items)  # Print the new items for debugging
     
     # Send new items
     for item in new_items:
@@ -106,3 +99,10 @@ def main():
         message = f"<b>{item['title']}</b>\n{url}\n{item.get('description', '')}"
         send_message(TELEGRAM_BOT_TOKEN, CHAT_ID, message)
         print(f"Sent message: {message}")
+    
+    # Update cache with new items
+    new_cached_items = ','.join([item['title'] for item in new_items])
+    os.environ[CACHE_KEY] = new_cached_items
+
+if __name__ == "__main__":
+    main()
