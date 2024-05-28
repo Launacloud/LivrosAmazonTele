@@ -87,10 +87,7 @@ def main():
         return
 
     # Check if cache exists
-    if CACHE_KEY in os.environ:
-        cached_items = os.getenv(CACHE_KEY).split(',')
-    else:
-        cached_items = []
+    cached_items = os.getenv(CACHE_KEY, '').split(',')
 
     # Get new items by comparing with cached items
     new_items = [item for item in feed_items if item['title'] not in cached_items]
@@ -107,7 +104,7 @@ def main():
         print(f"Sent message: {message}")
 
     # Update cache
-    new_cached_items = ','.join([item['title'] for item in feed_items])
+    new_cached_items = ','.join(cached_items + [item['title'] for item in new_items])
     os.environ[CACHE_KEY] = new_cached_items
 
 if __name__ == "__main__":
