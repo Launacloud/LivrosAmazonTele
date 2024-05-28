@@ -26,7 +26,7 @@ def parse_xml_feed(feed_url):
     if response.status_code != 200:
         print(f"Failed to fetch XML feed: {response.status_code}")
         return []
-    
+
     root = ET.fromstring(response.content)
     items = []
     for item in root.findall('.//item'):
@@ -48,7 +48,7 @@ def parse_json_feed(feed_url):
     if response.status_code != 200:
         print(f"Failed to fetch JSON feed: {response.status_code}")
         return []
-    
+
     feed_data = response.json()
     items = []
     for entry in feed_data.get('items', []):
@@ -68,40 +68,46 @@ def parse_json_feed(feed_url):
 
 def main():
     """Main function to fetch feeds, check for new items, and send them to Telegram."""
-    # Fetch XML feed
-    xml_feed_items = parse_xml_feed(RSS_FEED_URL)
-    # Fetch JSON feed
-    json_feed_items = parse_json_feed(RSS_FEED_URL)
-    
-    # Combine items from both feeds
-    feed_items = xml_feed_items + json_feed_items
-    
+    # Fetch feed
+    response = requests.head(RSS_FEED_URL)  # Send a HEAD request to get the content type
+    content_type = response.headers.get('content-type')
+
+    if 'xml' in content_type:
+        print("Content Type is XML.")
+        feed_items = parse_xml_feed(RSS_FEED_URL)
+    elif 'json' in content_type:
+        print("Content Type is JSON.")
+        feed_items = parse_json_feed(RSS_FEED_URL)
+    else:
+        print("Unsupported content type.")
+        return
+
     if not feed_items:
         print("No feed items found or failed to parse feeds.")
         return
-    
+
     # Check if cache exists
     if CACHE_KEY in os.environ:
         cached_items = os.getenv(CACHE_KEY).split(',')
     else:
         cached_items = []
-    
-    # Get the new items by comparing with the cached items
+
+    # Get new items by comparing with cached items
     new_items = [item for item in feed_items if item['title'] not in cached_items]
-    
+
     if not new_items:
         print("No new feed items found since last run.")
         return
-    
+
     # Send new items
     for item in new_items:
-        url = item.get('url') or item.get('link')  # Use 'url' if available, otherwise use 'link'
+        url = item.get('url') or item.get('link')
         message = f"<b>{item['title']}</b>\n{url}\n{item.get('description', '')}"
         send_message(TELEGRAM_BOT_TOKEN, CHAT_ID, message)
         print(f"Sent message: {message}")
-    
-    # Update cache with new items
-    new_cached_items = ','.join([item['title'] for item in new_items])
+
+    # Update cache
+    new_cached_items = ','.join([item['title'] for item in feed_items])
     os.environ[CACHE_KEY] = new_cached_items
 
 if __name__ == "__main__":
