@@ -47,7 +47,7 @@ jobs:
           RSS_FEED_URL: ${{ secrets.RSS_FEED_URL }}
         run: |
           cd $GITHUB_WORKSPACE  # Navigate to the root directory of the repository
-          python send_rss_to_telegram.py
+          python send_rss_to_telegram_AMZBR.py
 
   install_triggers:
     runs-on: ubuntu-latest
