@@ -1,17 +1,7 @@
 import os
-import subprocess
-import json
+import requests
 import xml.etree.ElementTree as ET
-
-# Check if requests module is installed
-try:
-    import requests
-except ImportError:
-    # If requests module is not installed, attempt to install it
-    print("Requests module is not installed. Attempting to install...")
-    subprocess.check_call(["pip", "install", "requests"])
-    # Once installed, import requests again
-    import requests
+import json
 
 # Telegram bot token and chat ID
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN_AMZBR')
@@ -38,6 +28,9 @@ def parse_rss(feed_url):
     if response.status_code != 200:
         print(f"Failed to fetch RSS feed: {response.status_code}")
         return []
+    
+    print("RSS Feed Content:")
+    print(response.content.decode('utf-8'))  # Print the content of the response
     
     root = ET.fromstring(response.content)
     items = []
