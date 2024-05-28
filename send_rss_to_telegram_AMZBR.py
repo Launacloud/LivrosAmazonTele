@@ -91,7 +91,8 @@ def main():
     
     # Send new items
     for item in new_items:
-        message = f"<b>{item['title']}</b>\n{item['link']}\n{item.get('description', '')}"
+        url = item.get('url') or item.get('link')  # Use 'url' if available, otherwise use 'link'
+        message = f"<b>{item['title']}</b>\n{url}\n{item.get('content_html', '')}"
         send_message(TELEGRAM_BOT_TOKEN, CHAT_ID, message)
         print(f"Sent message: {message}")
     
