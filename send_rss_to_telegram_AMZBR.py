@@ -21,6 +21,7 @@ def send_message(bot_token, chat_id, text):
 def parse_xml_feed(response_content):
     try:
         root = ET.fromstring(response_content)
+        print("Successfully parsed XML feed.")
     except ET.ParseError as e:
         print(f"Failed to parse XML: {e}")
         print(f"Response content: {response_content}")
@@ -33,6 +34,7 @@ def parse_xml_feed(response_content):
         content_html = entry.find('{http://www.w3.org/2005/Atom}content').text
         image_url = entry.find('{http://www.w3.org/2005/Atom}link').attrib['href']
         item_id = entry.find('{http://www.w3.org/2005/Atom}id').text
+        print(f"Parsed item - ID: {item_id}, Title: {title}")
         items.append({
             'id': item_id,
             'title': title,
@@ -45,6 +47,7 @@ def parse_xml_feed(response_content):
 def parse_json_feed(response_content):
     try:
         data = json.loads(response_content)
+        print("Successfully parsed JSON feed.")
     except json.JSONDecodeError as e:
         print(f"Failed to parse JSON: {e}")
         print(f"Response content: {response_content}")
@@ -57,6 +60,7 @@ def parse_json_feed(response_content):
         content_html = item.get('content_html', '')
         image_url = item.get('image')  # Adjust the key based on your JSON feed structure
         item_id = item.get('id')  # Adjust the key based on your JSON feed structure
+        print(f"Parsed item - ID: {item_id}, Title: {title}")
         items.append({
             'id': item_id,
             'title': title,
@@ -67,26 +71,33 @@ def parse_json_feed(response_content):
     return items
 
 def parse_rss(feed_url):
+    print(f"Fetching RSS feed from: {feed_url}")
     response = requests.get(feed_url)
     if response.status_code != 200:
         print(f"Failed to fetch RSS feed: {response.status_code}")
         return []
     
     content_type = response.headers.get('Content-Type', '')
+    print(f"Content type: {content_type}")
     if 'application/json' in content_type:
+        print("Detected JSON format.")
         return parse_json_feed(response.content)
     else:
+        print("Detected XML format.")
         return parse_xml_feed(response.content)
 
 def load_sent_items():
     if not os.path.exists(SENT_ITEMS_FILE):
+        print("Sent items file not found. Creating new one.")
         return set()
     
     with open(SENT_ITEMS_FILE, 'r') as f:
+        print("Loading sent items from file.")
         return set(json.load(f))
 
 def save_sent_items(sent_items):
     with open(SENT_ITEMS_FILE, 'w') as f:
+        print("Saving sent items to file.")
         json.dump(list(sent_items), f)
 
 def main():
@@ -99,6 +110,7 @@ def main():
     new_sent_items = set()
     for item in rss_items:
         if item['id'] in sent_items:
+            print(f"Item already sent - ID: {item['id']}, Title: {item['title']}")
             continue
         
         message = f"<b>{item['title']}</b>\n{item['link']}\n"
