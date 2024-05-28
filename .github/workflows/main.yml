@@ -45,7 +45,8 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           RSS_FEED_URL: ${{ secrets.RSS_FEED_URL }}
-        run: python send_rss_to_telegram.py
+        run: cd $GITHUB_WORKSPACE  # Navigate to the root directory of the repository
+    python send_rss_to_telegram.py
 
   install_triggers:
     runs-on: ubuntu-latest
