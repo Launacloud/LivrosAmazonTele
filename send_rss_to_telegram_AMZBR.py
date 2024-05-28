@@ -1,85 +1,67 @@
-import os
-import requests
-import xml.etree.ElementTree as ET
-import json
+name: RSS to Telegram Workflow
 
-# Telegram bot token and chat ID
-TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN_AMZBR')
-CHAT_ID = os.getenv('TELEGRAM_CHAT_IDAMZBR')
-RSS_FEED_URL = os.getenv('RSS_FEED_URLAMZBR')
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # Runs every 15 minutes
+  workflow_dispatch:
+  push:
 
-# Cache file path
-CACHE_FILE_PATH = './sent_items.json.json'
+jobs:
+  send_rss_to_telegram:
+    runs-on: ubuntu-latest
 
-def send_message(bot_token, chat_id, text):
-    """Send a message to the specified Telegram chat."""
-    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    payload = {
-        'chat_id': chat_id,
-        'text': text,
-        'parse_mode': 'HTML'
-    }
-    response = requests.post(url, data=payload)
-    return response
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-def parse_rss(feed_url):
-    """Parse the RSS feed and return new items."""
-    response = requests.get(feed_url)
-    if response.status_code != 200:
-        print(f"Failed to fetch RSS feed: {response.status_code}")
-        return []
-    
-    root = ET.fromstring(response.content)
-    items = []
-    for item in root.findall('.//item'):
-        title = item.find('title').text
-        link = item.find('link').text
-        description = item.find('description').text if item.find('description') is not None else ''
-        items.append({
-            'title': title,
-            'link': link,
-            'description': description
-        })
-    return items
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
 
-def load_cache(cache_file):
-    """Load the cache file if it exists."""
-    if os.path.exists(cache_file):
-        with open(cache_file, 'r') as f:
-            return json.load(f)
-    return []
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests  # Install the requests module
 
-def save_cache(cache_file, items):
-    """Save the items to the cache file."""
-    with open(cache_file, 'w') as f:
-        json.dump(items, f, indent=4)
+      - name: Check if cache directory exists
+        run: |
+          if [ ! -d ./cache ]; then
+            mkdir -p ./cache
+            echo "Cache directory created."
+          fi
 
-def main():
-    """Main function to fetch RSS feed, check cache, and send new items to Telegram."""
-    # Load cache
-    cache = load_cache(CACHE_FILE_PATH)
-    
-    # Fetch RSS feed
-    rss_items = parse_rss(RSS_FEED_URL)
-    if not rss_items:
-        print("No RSS items found or failed to parse RSS feed.")
-        return
-    
-    # Filter new items
-    new_items = [item for item in rss_items if item not in cache]
-    if not new_items:
-        print("No new RSS items found.")
-        return
-    
-    # Send new items
-    for item in new_items:
-        message = f"<b>{item['title']}</b>\n{item['link']}\n{item['description']}"
-        send_message(TELEGRAM_BOT_TOKEN, CHAT_ID, message)
-        print(f"Sent message: {message}")
-    
-    # Update cache with new items
-    cache.extend(new_items)
-    save_cache(CACHE_FILE_PATH, cache)
+      - name: Check if cache file exists
+        run: |
+          if [ -f ./cache/sent_items.json ]; then
+            echo "Cache file exists."
+            python send_rss_to_telegram.py --cache ./cache/sent_items.json
+          else
+            echo "Cache file does not exist. Skipping script execution."
+          fi
 
-if __name__ == "__main__":
-    main()
+      - name: Run script
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RSS_FEED_URL: ${{ secrets.RSS_FEED_URL }}
+        run: |
+          cd $GITHUB_WORKSPACE  # Navigate to the root directory of the repository
+          python send_rss_to_telegram.py
+
+  install_triggers:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Use Node.js 14.x
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14.x'
+
+      - name: Install dependencies
+        run: |
+          npm install
+          npm install @actionsflow/trigger-schedule
