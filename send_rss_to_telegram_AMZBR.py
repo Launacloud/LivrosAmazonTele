@@ -6,9 +6,7 @@ import json
 # Telegram bot token and chat ID
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN_AMZBR')
 CHAT_ID = os.getenv('TELEGRAM_CHAT_IDAMZBR')
-
-# Read RSS feed URL from secret
-RSS_FEED_URL = os.getenv('RSS_FEED_URL')
+RSS_FEED_URL = os.getenv('RSS_FEED_URLAMZBR')
 
 # Cache file path
 CACHE_FILE_PATH = './sent_items_cache.json'
