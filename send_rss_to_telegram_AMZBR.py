@@ -19,11 +19,11 @@ def send_message(bot_token, chat_id, text):
     response = requests.post(url, data=payload)
     return response
 
-def parse_feed(feed_url):
+def parse_xml_feed(feed_url):
     """Parse the XML feed and return new items."""
     response = requests.get(feed_url)
     if response.status_code != 200:
-        print(f"Failed to fetch feed: {response.status_code}")
+        print(f"Failed to fetch XML feed: {response.status_code}")
         return []
     
     root = ET.fromstring(response.content)
@@ -41,12 +41,28 @@ def parse_feed(feed_url):
         })
     return items
 
+def parse_json_feed(feed_url):
+    """Parse the JSON feed and return new items."""
+    response = requests.get(feed_url)
+    if response.status_code != 200:
+        print(f"Failed to fetch JSON feed: {response.status_code}")
+        return []
+    
+    feed_data = response.json()
+    return feed_data.get('items', [])
+
 def main():
-    """Main function to fetch feed, check for new items, and send them to Telegram."""
-    # Fetch feed
-    feed_items = parse_feed(RSS_FEED_URL)
+    """Main function to fetch feeds, check for new items, and send them to Telegram."""
+    # Fetch XML feed
+    xml_feed_items = parse_xml_feed(RSS_FEED_URL)
+    # Fetch JSON feed
+    json_feed_items = parse_json_feed(RSS_FEED_URL)
+    
+    # Combine items from both feeds
+    feed_items = xml_feed_items + json_feed_items
+    
     if not feed_items:
-        print("No feed items found or failed to parse feed.")
+        print("No feed items found or failed to parse feeds.")
         return
     
     # Get the last run time
