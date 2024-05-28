@@ -46,7 +46,6 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           RSS_FEED_URL: ${{ secrets.RSS_FEED_URL }}
         run: |
-          cd $GITHUB_WORKSPACE  # Navigate to the root directory of the repository
           python send_rss_to_telegram.py
 
   install_triggers:
