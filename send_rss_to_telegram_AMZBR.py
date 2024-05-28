@@ -7,7 +7,9 @@ from datetime import datetime
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN_AMZBR')
 CHAT_ID = os.getenv('TELEGRAM_CHAT_IDAMZBR')
 RSS_FEED_URL = os.getenv('RSS_FEED_URLAMZBR')
-CACHE_FILE = 'cache-sent-items.txt'
+
+# Create an empty set for storing sent item titles
+SENT_ITEMS_CACHE = set()
 
 def send_message(bot_token, chat_id, text):
     """Send a message to the specified Telegram chat."""
@@ -66,19 +68,6 @@ def parse_json_feed(feed_url):
         })
     return items
 
-def update_cache(items):
-    """Update the cache file with the titles of the sent items."""
-    with open(CACHE_FILE, 'w') as file:
-        file.write('\n'.join(items))
-
-def load_cache():
-    """Load the cache file and return the titles of the sent items."""
-    if os.path.exists(CACHE_FILE):
-        with open(CACHE_FILE, 'r') as file:
-            return file.read().splitlines()
-    else:
-        return []
-
 def main():
     """Main function to fetch feeds, check for new items, and send them to Telegram."""
     # Fetch feed
@@ -99,11 +88,8 @@ def main():
         print("No feed items found or failed to parse feeds.")
         return
 
-    # Load cache
-    cached_items = load_cache()
-
     # Get new items by comparing with cached items
-    new_items = [item for item in feed_items if item['title'] not in cached_items]
+    new_items = [item for item in feed_items if item['title'] not in SENT_ITEMS_CACHE]
 
     if not new_items:
         print("No new feed items found since last run.")
@@ -116,8 +102,8 @@ def main():
         send_message(TELEGRAM_BOT_TOKEN, CHAT_ID, message)
         print(f"Sent message: {message}")
 
-    # Update cache
-    update_cache(cached_items + [item['title'] for item in new_items])
+    # Update the cache with the titles of the sent items
+    SENT_ITEMS_CACHE.update(item['title'] for item in new_items)
 
 if __name__ == "__main__":
     main()
