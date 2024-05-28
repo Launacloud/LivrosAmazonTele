@@ -75,7 +75,7 @@ def main():
     if os.path.exists('./sent_items_cache.json'):
         with open('./sent_items_cache.json', 'r') as cache_file:
             try:
-                cached_data = set(json.load(cache_file))
+                cached_data = set(tuple(item) for item in json.load(cache_file))
             except json.JSONDecodeError:
                 print("Error decoding cache file. Skipping cache loading.")
 
@@ -114,8 +114,7 @@ def main():
     # Update the cache with the titles of the sent items
     cached_data.update(tuple(item.values()) for item in new_items)
     with open('./sent_items_cache.json', 'w') as cache_file:
-        json.dump(list(cached_data), cache_file)
+        json.dump([list(item) for item in cached_data], cache_file)
 
 if __name__ == "__main__":
     main()
-
