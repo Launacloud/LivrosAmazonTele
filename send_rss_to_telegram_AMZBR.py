@@ -39,7 +39,7 @@ def parse_rss(feed_url):
             items = []
             for item in root.findall('.//item'):
                 title = item.find('title').text
-                link = item.find('link').text
+                link = item.find('link').text if item.find('link') is not None else ''
                 description = item.find('description').text if item.find('description') is not None else ''
                 items.append({
                     'title': title,
@@ -83,7 +83,7 @@ def main():
     
     # Send new items
     for item in new_items:
-        message = f"<b>{item['title']}</b>\n{item['link']}\n{item.get('description', '')}"
+        message = f"<b>{item['title']}</b>\n{item.get('link', '')}\n{item.get('description', '')}"
         send_message(TELEGRAM_BOT_TOKEN, CHAT_ID, message)
         print(f"Sent message: {message}")
     
