@@ -6,65 +6,65 @@ import json
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN_AMZBR')
 RSS_FEED_URL = os.getenv('RSS_FEED_URLAMZBR')
 CHAT_ID = os.getenv('TELEGRAM_CHAT_IDAMZBR')
-SENT_ITEMS_FILE = 'sent_items.json'  # Path to the sent items file
 
 def send_message(bot_token, chat_id, text):
-    # Function to send message to Telegram
-    # Implementation omitted for brevity
-    pass
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    payload = {
+        'chat_id': chat_id,
+        'text': text,
+        'parse_mode': 'HTML'
+    }
+    response = requests.post(url, data=payload)
+    return response
 
 def parse_xml_feed(response_content):
-    # Function to parse XML feed
-    # Implementation omitted for brevity
-    pass
+    # Your parsing code goes here
+
+def parse_json_feed(response_content):
+    # Your parsing code goes here
 
 def parse_rss(feed_url):
-    # Function to parse RSS feed
-    # Implementation omitted for brevity
-    pass
+    # Your parsing code goes here
 
 def fetch_sent_items():
-    # Function to fetch sent items from the sent_items.json file
-    if os.path.exists(SENT_ITEMS_FILE):
-        with open(SENT_ITEMS_FILE, 'r') as file:
-            try:
-                return json.load(file)
-            except json.JSONDecodeError as e:
-                print(f"Failed to parse sent items JSON: {e}")
-    return []
+    sent_items_file = 'sent_items.json'
+    if not os.path.exists(sent_items_file):
+        # Create the file if it doesn't exist
+        with open(sent_items_file, 'w') as f:
+            json.dump([], f)
+            print("Sent items file created successfully.")
+    
+    # Read the sent items from the file
+    with open(sent_items_file, 'r') as f:
+        return json.load(f)
 
-def save_sent_items(sent_items):
-    # Function to save sent items to the sent_items.json file
-    with open(SENT_ITEMS_FILE, 'w') as file:
-        json.dump(sent_items, file, indent=4)
+def save_sent_item(item):
+    sent_items = fetch_sent_items()
+    sent_items.append(item)
+    with open('sent_items.json', 'w') as f:
+        json.dump(sent_items, f)
 
 def main():
-    # Fetch sent items
-    sent_items = fetch_sent_items()
-
-    # Parse RSS feed
     rss_items = parse_rss(RSS_FEED_URL)
-
     if not rss_items:
         print("No RSS items found or failed to parse RSS feed.")
         return
-
+    
+    sent_items = fetch_sent_items()
     for item in rss_items:
-        # Check if item is already sent
-        if item in sent_items:
-            print(f"Skipping already sent item: {item}")
-            continue
-
-        # Send message
-        message = f"<b>{item['title']}</b>\n{item['link']}\n"
-        send_message(TELEGRAM_BOT_TOKEN, CHAT_ID, message)
-        print(f"Sent message: {message}")
-
-        # Add item to sent items
-        sent_items.append(item)
-
-    # Save sent items
-    save_sent_items(sent_items)
+        if item not in sent_items:
+            message = f"<b>{item['title']}</b>\n{item['link']}\n"
+            if item['image_url']:
+                message += f"<a href='{item['image_url']}'>&#8205;</a>\n"
+            if item['content_html']:
+                message += f"{item['content_html']}\n"
+            response = send_message(TELEGRAM_BOT_TOKEN, CHAT_ID, message)
+            if response.status_code == 200:
+                save_sent_item(item)
+                print(f"Sent message: {message}")
+                print(f"RSS Item - Title: {item['title']}, Link: {item['link']}, Image: {item['image_url']}, Content HTML: {item['content_html']}")
+            else:
+                print(f"Failed to send message: {response.status_code}")
 
 if __name__ == "__main__":
     main()
