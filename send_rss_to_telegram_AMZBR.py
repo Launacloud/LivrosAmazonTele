@@ -66,19 +66,18 @@ def parse_json_feed(feed_url):
         })
     return items
 
-def load_cached_items():
-    """Load cached items from the cache file."""
+def update_cache(items):
+    """Update the cache file with the titles of the sent items."""
+    with open(CACHE_FILE, 'w') as file:
+        file.write('\n'.join(items))
+
+def load_cache():
+    """Load the cache file and return the titles of the sent items."""
     if os.path.exists(CACHE_FILE):
         with open(CACHE_FILE, 'r') as file:
             return file.read().splitlines()
     else:
         return []
-
-def update_cache(new_items):
-    """Update the cache file with new items."""
-    with open(CACHE_FILE, 'a') as file:
-        for item in new_items:
-            file.write(item['title'] + '\n')
 
 def main():
     """Main function to fetch feeds, check for new items, and send them to Telegram."""
@@ -100,8 +99,8 @@ def main():
         print("No feed items found or failed to parse feeds.")
         return
 
-    # Load cached items
-    cached_items = load_cached_items()
+    # Load cache
+    cached_items = load_cache()
 
     # Get new items by comparing with cached items
     new_items = [item for item in feed_items if item['title'] not in cached_items]
@@ -118,7 +117,7 @@ def main():
         print(f"Sent message: {message}")
 
     # Update cache
-    update_cache(new_items)
+    update_cache(cached_items + [item['title'] for item in new_items])
 
 if __name__ == "__main__":
     main()
