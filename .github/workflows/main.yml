@@ -2,7 +2,7 @@ name: RSS to Telegram Workflow
 
 on:
   schedule:
-    - cron: '*/6 * * * *'  # Runs every 15 minutes
+    - cron: '*/15 * * * *'  # Runs every 15 minutes
   workflow_dispatch:
   push:
 
@@ -19,22 +19,28 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Restore cache
+        uses: actions/cache@v2
+        with:
+          path: ./sent_items_cache.json
+          key: cache-sent-items
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests  # Install the necessary Python packages
-
-      - name: Check if cache directory exists
-        run: |
-          if [ ! -d ./cache ]; then
-            mkdir -p ./cache
-            echo "Cache directory created."
-          fi
+          # pip install -r requirements.txt  # Add any required Python packages
 
       - name: Run script
         env:
           TELEGRAM_BOT_TOKEN_AMZBR: ${{ secrets.TELEGRAM_BOT_TOKEN_AMZBR }}
           TELEGRAM_CHAT_IDAMZBR: ${{ secrets.TELEGRAM_CHAT_IDAMZBR }}
           RSS_FEED_URLAMZBR: ${{ secrets.RSS_FEED_URLAMZBR }}
-        run: |
-          python send_rss_to_telegram_AMZBR.py
+        run: python send_rss_to_telegram_AMZBR.py
+
+      - name: Save cache
+        if: always()
+        uses: actions/cache@v2
+        with:
+          path: ./sent_items_cache.json
+          key: cache-sent-items
+          restore-keys: cache-sent-items
