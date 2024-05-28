@@ -22,28 +22,43 @@ def send_message(bot_token, chat_id, text):
     response = requests.post(url, data=payload)
     return response
 
-def parse_rss(feed_url):
-    """Parse the RSS feed and return new items."""
+def parse_feed(feed_url):
+    """Parse the feed (either JSON or XML) and return new items."""
     response = requests.get(feed_url)
     if response.status_code != 200:
-        print(f"Failed to fetch RSS feed: {response.status_code}")
+        print(f"Failed to fetch feed: {response.status_code}")
         return []
     
-    print("RSS Feed Content:")
+    print("Feed Content:")
     print(response.content.decode('utf-8'))  # Print the content of the response
     
-    root = ET.fromstring(response.content)
-    items = []
-    for item in root.findall('.//item'):
-        title = item.find('title').text
-        link = item.find('link').text if item.find('link') is not None else ''
-        description = item.find('description').text if item.find('description') is not None else ''
-        items.append({
-            'title': title,
-            'link': link,
-            'description': description
-        })
-    return items
+    try:
+        # Try parsing as JSON
+        feed_data = response.json()
+    except json.JSONDecodeError:
+        try:
+            # Try parsing as XML
+            root = ET.fromstring(response.content)
+            items = []
+            for item in root.findall('.//item'):
+                title = item.find('title').text
+                link = item.find('link').text if item.find('link') is not None else ''
+                description = item.find('description').text if item.find('description') is not None else ''
+                items.append({
+                    'title': title,
+                    'link': link,
+                    'description': description
+                })
+            return items
+        except ET.ParseError as e:
+            print(f"Failed to parse XML: {e}")
+            return []
+    else:
+        if 'items' in feed_data:
+            return feed_data['items']
+        else:
+            print("No 'items' found in JSON feed.")
+            return []
 
 def load_cache(cache_file):
     """Load the cache file if it exists."""
@@ -58,20 +73,20 @@ def save_cache(cache_file, items):
         json.dump(items, f, indent=4)
 
 def main():
-    """Main function to fetch RSS feed, check cache, and send new items to Telegram."""
+    """Main function to fetch feed, check cache, and send new items to Telegram."""
     # Load cache
     cache = load_cache(CACHE_FILE_PATH)
     
-    # Fetch RSS feed
-    rss_items = parse_rss(RSS_FEED_URL)
-    if not rss_items:
-        print("No RSS items found or failed to parse RSS feed.")
+    # Fetch feed
+    feed_items = parse_feed(RSS_FEED_URL)
+    if not feed_items:
+        print("No feed items found or failed to parse feed.")
         return
     
     # Filter new items
-    new_items = [item for item in rss_items if item not in cache]
+    new_items = [item for item in feed_items if item not in cache]
     if not new_items:
-        print("No new RSS items found.")
+        print("No new feed items found.")
         return
     
     # Send new items
