@@ -2,7 +2,7 @@ name: RSS to Telegram Workflow
 
 on:
   schedule:
-    - cron: '*/6 * * * *'  # Runs every 15 minutes
+    - cron: '*/6 * * * *'  # Runs every 6 minutes
   workflow_dispatch:
   push:
 
@@ -11,37 +11,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.x'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install requests
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
 
-    - name: Run script
-      env:
-        TELEGRAM_BOT_TOKEN_AMZBR: ${{ secrets.TELEGRAM_BOT_TOKEN_AMZBR }}
-        RSS_FEED_URLAMZBR: ${{ secrets.RSS_FEED_URLAMZBR }}
-        TELEGRAM_CHAT_IDAMZBR: ${{ secrets.TELEGRAM_CHAT_IDAMZBR }}
-      run: python send_rss_to_telegram_AMZBR.py
+      - name: Run script
+        env:
+          TELEGRAM_BOT_TOKEN_AMZBR: ${{ secrets.TELEGRAM_BOT_TOKEN_AMZBR }}
+          RSS_FEED_URLAMZBR: ${{ secrets.RSS_FEED_URLAMZBR }}
+          TELEGRAM_CHAT_IDAMZBR: ${{ secrets.TELEGRAM_CHAT_IDAMZBR }}
+        run: python send_rss_to_telegram_AMZBR.py
 
-       - name: Upload log file
-      uses: actions/upload-artifact@v2
-      with:
-        name: rss-to-telegram-log
-        path: rss_to_telegram.log
+      - name: Upload log file
+        uses: actions/upload-artifact@v2
+        with:
+          name: rss-to-telegram-log
+          path: rss_to_telegram.log
 
-    - name: Upload sent items file
-      uses: actions/upload-artifact@v2
-      with:
-        name: sent-items-file
-        path: sent_items.json
+      - name: Upload sent items file
+        uses: actions/upload-artifact@v2
+        with:
+          name: sent-items-file
+          path: sent_items.json
 
   build_actionsflow:
     runs-on: ubuntu-latest
@@ -70,4 +70,3 @@ jobs:
 
       - name: Build Actionsflow
         run: npx actionsflow build --include -f false --verbose false --json-secrets '${{ secrets.YOUR_SECRETS_HERE }}' --json-github '${{ toJson(github) }}'
-
