@@ -72,12 +72,16 @@ def main():
     """Main function to fetch feeds, check for new items, and send them to Telegram."""
     # Load cache
     cached_data = set()
+    # Attempt to restore cache
     if os.path.exists('./sent_items_cache.json'):
         with open('./sent_items_cache.json', 'r') as cache_file:
             try:
                 cached_data = set(tuple(item) for item in json.load(cache_file))
+                print("Cache loaded successfully.")
             except json.JSONDecodeError:
                 print("Error decoding cache file. Skipping cache loading.")
+    else:
+        print("No cache file found.")
 
     # Fetch feed
     response = requests.head(RSS_FEED_URL)  # Send a HEAD request to get the content type
