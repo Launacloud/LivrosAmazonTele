@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests  # Install the requests module
+          pip install requests  # Install the necessary Python packages
 
       - name: Check if cache directory exists
         run: |
@@ -31,32 +31,10 @@ jobs:
             echo "Cache directory created."
           fi
 
-      - name: Check if cache file exists
-        run: |
-          if [ -f ./cache/sent_items.json ]; then
-            echo "Cache file exists."
-            python send_rss_to_telegram.py --cache ./cache/sent_items.json
-          else
-            echo "Cache file does not exist. Skipping script execution."
-          fi
-
       - name: Run script
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          RSS_FEED_URL: ${{ secrets.RSS_FEED_URL }}
+          TELEGRAM_BOT_TOKEN_AMZBR: ${{ secrets.TELEGRAM_BOT_TOKEN_AMZBR }}
+          TELEGRAM_CHAT_IDAMZBR: ${{ secrets.TELEGRAM_CHAT_IDAMZBR }}
+          RSS_FEED_URLAMZBR: ${{ secrets.RSS_FEED_URLAMZBR }}
         run: |
-          cd $GITHUB_WORKSPACE  # Navigate to the root directory of the repository
-          python send_rss_to_telegram_AMZBR.py
-
-  install_triggers:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Install dependencies
-        run: |
-          npm install
-          npm install @actionsflow/trigger-schedule
+          python send_rss_to_telegram.py
