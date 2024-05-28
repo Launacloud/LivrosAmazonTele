@@ -117,4 +117,8 @@ def main():
     # Update the cache with the titles of the sent items
     SENT_ITEMS_CACHE.update(item['title'] for item in new_items)
     with open('./sent_items_cache.json', 'w') as cache_file:
-        json.dump(list(SENT_ITEMS_CACHE),
+            json.dump(list(SENT_ITEMS_CACHE), cache_file)
+
+if __name__ == "__main__":
+    main()
+                  
