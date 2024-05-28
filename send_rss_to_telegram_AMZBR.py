@@ -29,7 +29,13 @@ def parse_rss(feed_url):
         print(f"Failed to fetch RSS feed: {response.status_code}")
         return []
     
-    root = ET.fromstring(response.content)
+    try:
+        root = ET.fromstring(response.content)
+    except ET.ParseError as e:
+        print(f"Failed to parse RSS feed: {e}")
+        print(f"Response content: {response.content}")
+        return []
+    
     items = []
     for item in root.findall('.//item'):
         title = item.find('title').text
