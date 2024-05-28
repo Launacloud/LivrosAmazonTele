@@ -37,4 +37,4 @@ jobs:
           TELEGRAM_CHAT_IDAMZBR: ${{ secrets.TELEGRAM_CHAT_IDAMZBR }}
           RSS_FEED_URLAMZBR: ${{ secrets.RSS_FEED_URLAMZBR }}
         run: |
-          python send_rss_to_telegram.py
+          python send_rss_to_telegram_AMZBR.py
