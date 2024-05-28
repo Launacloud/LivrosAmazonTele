@@ -52,6 +52,18 @@ def parse_rss(feed_url):
             print(f"Response content: {response.content}")
             return []
 
+def load_cache(cache_file):
+    """Load the cache file if it exists."""
+    if os.path.exists(cache_file):
+        with open(cache_file, 'r') as f:
+            return json.load(f)
+    return []
+
+def save_cache(cache_file, items):
+    """Save the items to the cache file."""
+    with open(cache_file, 'w') as f:
+        json.dump(items, f, indent=4)
+
 def main():
     """Main function to fetch RSS feed, check cache, and send new items to Telegram."""
     # Fetch RSS feed
