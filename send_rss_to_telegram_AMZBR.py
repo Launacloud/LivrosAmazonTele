@@ -3,11 +3,18 @@ import requests
 import xml.etree.ElementTree as ET
 import json
 
+# Telegram bot token and chat ID
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN_AMZBR')
-RSS_FEED_URL = os.getenv('RSS_FEED_URLAMZBR')
 CHAT_ID = os.getenv('TELEGRAM_CHAT_IDAMZBR')
 
+# Read RSS feed URL from secret
+RSS_FEED_URL = os.getenv('RSS_FEED_URL')
+
+# Cache file path
+CACHE_FILE_PATH = './sent_items_cache.json'
+
 def send_message(bot_token, chat_id, text):
+    """Send a message to the specified Telegram chat."""
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     payload = {
         'chat_id': chat_id,
@@ -17,99 +24,64 @@ def send_message(bot_token, chat_id, text):
     response = requests.post(url, data=payload)
     return response
 
-def parse_xml_feed(response_content):
-    try:
-        root = ET.fromstring(response_content)
-    except ET.ParseError as e:
-        print(f"Failed to parse XML: {e}")
-        print(f"Response content: {response_content}")
+def parse_rss(feed_url):
+    """Parse the RSS feed and return new items."""
+    response = requests.get(feed_url)
+    if response.status_code != 200:
+        print(f"Failed to fetch RSS feed: {response.status_code}")
         return []
-
+    
+    root = ET.fromstring(response.content)
     items = []
     for item in root.findall('.//item'):
         title = item.find('title').text
         link = item.find('link').text
         description = item.find('description').text if item.find('description') is not None else ''
-        content = item.find('{http://purl.org/rss/1.0/modules/content/}encoded')
-        content_html = content.text if content is not None else ''
-        image = item.find('{http://search.yahoo.com/mrss/}thumbnail')
-        image_url = image.get('url') if image is not None else ''
         items.append({
             'title': title,
             'link': link,
-            'description': description,
-            'content_html': content_html,
-            'image_url': image_url
+            'description': description
         })
     return items
 
-def parse_json_feed(response_content):
-    try:
-        data = json.loads(response_content)
-    except json.JSONDecodeError as e:
-        print(f"Failed to parse JSON: {e}")
-        print(f"Response content: {response_content}")
-        return []
+def load_cache(cache_file):
+    """Load the cache file if it exists."""
+    if os.path.exists(cache_file):
+        with open(cache_file, 'r') as f:
+            return json.load(f)
+    return []
 
-    items = []
-    for item in data.get('items', []):
-        title = item.get('title')
-        link = item.get('url')  # Adjust the key based on your JSON feed structure
-        content_html = item.get('content_html', '')
-        image_url = item.get('image')  # Adjust the key based on your JSON feed structure
-        items.append({
-            'title': title,
-            'link': link,
-            'content_html': content_html,
-            'image_url': image_url
-        })
-    return items
-
-def parse_rss(feed_url):
-    response = requests.get(feed_url)
-    if response.status_code != 200:
-        print(f"Failed to fetch RSS feed: {response.status_code}")
-        return []
-
-    content_type = response.headers.get('Content-Type', '')
-    if 'application/json' in content_type:
-        return parse_json_feed(response.content)
-    else:
-        return parse_xml_feed(response.content)
-
-def fetch_sent_items():
-    response = requests.get('https://raw.githubusercontent.com/Launacloud/LivrosAmazonTele/main/sent_items.json')
-    if response.status_code != 200:
-        print(f"Failed to fetch sent items: {response.status_code}")
-        return []
-    if not response.content:
-        return []
-    return json.loads(response.content)
-
-def save_sent_item(item):
-    sent_items = fetch_sent_items()
-    sent_items.append(item)
-    with open('sent_items.json', 'w') as f:
-        json.dump(sent_items, f)
+def save_cache(cache_file, items):
+    """Save the items to the cache file."""
+    with open(cache_file, 'w') as f:
+        json.dump(items, f, indent=4)
 
 def main():
+    """Main function to fetch RSS feed, check cache, and send new items to Telegram."""
+    # Load cache
+    cache = load_cache(CACHE_FILE_PATH)
+    
+    # Fetch RSS feed
     rss_items = parse_rss(RSS_FEED_URL)
     if not rss_items:
         print("No RSS items found or failed to parse RSS feed.")
         return
-
-    sent_items = fetch_sent_items()
-    for item in rss_items:
-        if item not in sent_items:
-            message = f"<b>{item['title']}</b>\n{item['link']}\n"
-            if item['image_url']:
-                message += f"<a href='{item['image_url']}'>&#8205;</a>\n"
-            if item['content_html']:
-                message += f"{item['content_html']}\n"
-            send_message(TELEGRAM_BOT_TOKEN, CHAT_ID, message)
-            print(f"Sent message: {message}")
-            print(f"RSS Item - Title: {item['title']}, Link: {item['link']}, Image: {item['image_url']}, Content HTML: {item['content_html']}")
-            save_sent_item(item)
+    
+    # Filter new items
+    new_items = [item for item in rss_items if item not in cache]
+    if not new_items:
+        print("No new RSS items found.")
+        return
+    
+    # Send new items
+    for item in new_items:
+        message = f"<b>{item['title']}</b>\n{item['link']}\n{item['description']}"
+        send_message(TELEGRAM_BOT_TOKEN, CHAT_ID, message)
+        print(f"Sent message: {message}")
+    
+    # Update cache with new items
+    cache.extend(new_items)
+    save_cache(CACHE_FILE_PATH, cache)
 
 if __name__ == "__main__":
     main()
