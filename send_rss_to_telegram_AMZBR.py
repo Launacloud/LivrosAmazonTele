@@ -1,7 +1,7 @@
 import os
 import requests
-import xml.etree.ElementTree as ET
 import json
+import xml.etree.ElementTree as ET
 
 # Telegram bot token and chat ID
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN_AMZBR')
@@ -28,48 +28,40 @@ def parse_rss(feed_url):
     if response.status_code != 200:
         print(f"Failed to fetch RSS feed: {response.status_code}")
         return []
-    
+
     try:
-        root = ET.fromstring(response.content)
-    except ET.ParseError as e:
-        print(f"Failed to parse RSS feed: {e}")
-        print(f"Response content: {response.content}")
-        return []
-    
-    items = []
-    for item in root.findall('.//item'):
-        title = item.find('title').text
-        link = item.find('link').text
-        description = item.find('description').text if item.find('description') is not None else ''
-        items.append({
-            'title': title,
-            'link': link,
-            'description': description
-        })
-    return items
-
-def load_cache(cache_file):
-    """Load the cache file if it exists."""
-    if os.path.exists(cache_file):
-        with open(cache_file, 'r') as f:
-            return json.load(f)
-    return []
-
-def save_cache(cache_file, items):
-    """Save the items to the cache file."""
-    with open(cache_file, 'w') as f:
-        json.dump(items, f, indent=4)
+        feed_data = response.json()
+        items = feed_data.get('items', [])
+        return items
+    except json.JSONDecodeError:
+        try:
+            root = ET.fromstring(response.content)
+            items = []
+            for item in root.findall('.//item'):
+                title = item.find('title').text
+                link = item.find('link').text
+                description = item.find('description').text if item.find('description') is not None else ''
+                items.append({
+                    'title': title,
+                    'link': link,
+                    'description': description
+                })
+            return items
+        except ET.ParseError as e:
+            print(f"Failed to parse XML response: {e}")
+            print(f"Response content: {response.content}")
+            return []
 
 def main():
     """Main function to fetch RSS feed, check cache, and send new items to Telegram."""
-    # Load cache
-    cache = load_cache(CACHE_FILE_PATH)
-    
     # Fetch RSS feed
     rss_items = parse_rss(RSS_FEED_URL)
     if not rss_items:
         print("No RSS items found or failed to parse RSS feed.")
         return
+    
+    # Load cache
+    cache = load_cache(CACHE_FILE_PATH)
     
     # Filter new items
     new_items = [item for item in rss_items if item not in cache]
@@ -79,7 +71,7 @@ def main():
     
     # Send new items
     for item in new_items:
-        message = f"<b>{item['title']}</b>\n{item['link']}\n{item['description']}"
+        message = f"<b>{item['title']}</b>\n{item['link']}\n{item.get('description', '')}"
         send_message(TELEGRAM_BOT_TOKEN, CHAT_ID, message)
         print(f"Sent message: {message}")
     
