@@ -56,23 +56,23 @@ def main():
     if not rss_items:
         print("No JSON items found or failed to parse JSON feed.")
         return
-    
+
     # Load cache
     cache = load_cache(CACHE_FILE_PATH)
-    
+
     # Filter new items
     new_items = [item for item in rss_items if item not in cache]
     if not new_items:
         print("No new JSON items found.")
         return
-    
+
     # Send new items
     for item in new_items:
         url = item.get('url') or item.get('link')  # Use 'url' if available, otherwise use 'link'
         message = f"<b>{item['title']}</b>\n{url}\n{item.get('content_html', '')}"
         send_message(TELEGRAM_BOT_TOKEN, CHAT_ID, message)
         print(f"Sent message: {message}")
-    
+
     # Update cache with new items
     cache.extend(new_items)
     save_cache(CACHE_FILE_PATH, cache)
