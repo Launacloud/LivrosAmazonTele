@@ -31,6 +31,18 @@ jobs:
         TELEGRAM_CHAT_IDAMZBR: ${{ secrets.TELEGRAM_CHAT_IDAMZBR }}
       run: python send_rss_to_telegram_AMZBR.py
 
+       - name: Upload log file
+      uses: actions/upload-artifact@v2
+      with:
+        name: rss-to-telegram-log
+        path: rss_to_telegram.log
+
+    - name: Upload sent items file
+      uses: actions/upload-artifact@v2
+      with:
+        name: sent-items-file
+        path: sent_items.json
+
   build_actionsflow:
     runs-on: ubuntu-latest
 
