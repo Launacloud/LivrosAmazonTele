@@ -9,7 +9,7 @@ CHAT_ID = os.getenv('TELEGRAM_CHAT_IDAMZBR')
 RSS_FEED_URL = os.getenv('RSS_FEED_URLAMZBR')
 
 # Cache file path
-CACHE_FILE_PATH = './sent_items_cache.json'
+CACHE_FILE_PATH = './sent_items.json.json'
 
 def send_message(bot_token, chat_id, text):
     """Send a message to the specified Telegram chat."""
