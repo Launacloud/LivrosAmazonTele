@@ -7,9 +7,8 @@ import json
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN_AMZBR')
 CHAT_ID = os.getenv('TELEGRAM_CHAT_IDAMZBR')
 RSS_FEED_URL = os.getenv('RSS_FEED_URLAMZBR')
-
-# Create an empty set for storing sent item titles
-SENT_ITEMS_CACHE = set()
+# Define the path to the cache file
+CACHE_FILE_PATH = './sent_items_cache.json'
 
 def send_message(bot_token, chat_id, text):
     """Send a message to the specified Telegram chat."""
@@ -71,17 +70,25 @@ def parse_json_feed(feed_url):
 def main():
     """Main function to fetch feeds, check for new items, and send them to Telegram."""
     # Load cache
-    cached_data = set()
-    # Attempt to restore cache
-    if os.path.exists('./sent_items_cache.json'):
-        with open('./sent_items_cache.json', 'r') as cache_file:
-            try:
-                cached_data = set(tuple(item) for item in json.load(cache_file))
-                print("Cache loaded successfully.")
-            except json.JSONDecodeError:
-                print("Error decoding cache file. Skipping cache loading.")
-    else:
-        print("No cache file found.")
+cached_data = set()
+# Attempt to restore cache
+if os.path.exists(CACHE_FILE_PATH):
+    with open(CACHE_FILE_PATH, 'r') as cache_file:
+        try:
+            cached_data = set(tuple(item) for item in json.load(cache_file))
+            print("Cache loaded successfully.")
+        except json.JSONDecodeError:
+            print("Error decoding cache file. Skipping cache loading.")
+else:
+    print("No cache file found.")
+
+# Print cache file contents
+if cached_data:
+    print("Cache file contents:")
+    for item in cached_data:
+        print(item)
+else:
+    print("Cache is empty.")
 
     # Fetch feed
     response = requests.head(RSS_FEED_URL)  # Send a HEAD request to get the content type
