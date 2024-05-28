@@ -74,10 +74,13 @@ def main():
     if os.path.exists('./sent_items_cache.json'):
         with open('./sent_items_cache.json', 'r') as cache_file:
             try:
-                SENT_ITEMS_CACHE.update(json.load(cache_file))
+                cached_data = json.load(cache_file)
+                if isinstance(cached_data, list):
+                    SENT_ITEMS_CACHE.update(cached_data)
+                else:
+                    print("Invalid cache format. Skipping cache loading.")
             except json.JSONDecodeError:
-                # If the cache file is empty or corrupted, continue with an empty cache
-                pass
+                print("Error decoding cache file. Skipping cache loading.")
 
     # Fetch feed
     response = requests.head(RSS_FEED_URL)  # Send a HEAD request to get the content type
@@ -114,7 +117,4 @@ def main():
     # Update the cache with the titles of the sent items
     SENT_ITEMS_CACHE.update(item['title'] for item in new_items)
     with open('./sent_items_cache.json', 'w') as cache_file:
-        json.dump(list(SENT_ITEMS_CACHE), cache_file)
-
-if __name__ == "__main__":
-    main()
+        json.dump(list(SENT_ITEMS_CACHE),
