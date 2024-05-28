@@ -1,7 +1,7 @@
 import os
 import requests
 import xml.etree.ElementTree as ET
-from datetime import datetime
+import json
 
 # Telegram bot token and chat ID
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN_AMZBR')
@@ -70,6 +70,11 @@ def parse_json_feed(feed_url):
 
 def main():
     """Main function to fetch feeds, check for new items, and send them to Telegram."""
+    # Load cache
+    if os.path.exists('./sent_items_cache.json'):
+        with open('./sent_items_cache.json', 'r') as cache_file:
+            SENT_ITEMS_CACHE.update(json.load(cache_file))
+
     # Fetch feed
     response = requests.head(RSS_FEED_URL)  # Send a HEAD request to get the content type
     content_type = response.headers.get('content-type')
@@ -104,6 +109,8 @@ def main():
 
     # Update the cache with the titles of the sent items
     SENT_ITEMS_CACHE.update(item['title'] for item in new_items)
+    with open('./sent_items_cache.json', 'w') as cache_file:
+        json.dump(list(SENT_ITEMS_CACHE), cache_file)
 
 if __name__ == "__main__":
     main()
