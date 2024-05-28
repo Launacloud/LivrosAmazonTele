@@ -2,7 +2,7 @@ name: RSS to Telegram Workflow
 
 on:
   schedule:
-    - cron: '*/6 * * * *'  # Runs every 6 minutes
+    - cron: '*/15 * * * *'  # Runs every 15 minutes
   workflow_dispatch:
   push:
 
@@ -15,50 +15,52 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v2
         with:
           python-version: '3.x'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests
+          pip install -r requirements.txt  # Add any required Python packages
 
       - name: Check if cache directory exists
         run: |
-          if [ ! -d ./LivrosAmazonTele/cache ]; then
-            mkdir -p ./LivrosAmazonTele/cache
+          if [ ! -d ./cache ]; then
+            mkdir -p ./cache
             echo "Cache directory created."
           fi
 
       - name: Check if cache file exists
         run: |
-          if [ -f ./LivrosAmazonTele/cache/sent_items.json ]; then
+          if [ -f ./cache/sent_items.json ]; then
             echo "Cache file exists."
-            python send_rss_to_telegram_AMZBR.py --cache ./LivrosAmazonTele/cache/sent_items.json
+            python send_rss_to_telegram.py --cache ./cache/sent_items.json
           else
             echo "Cache file does not exist. Skipping script execution."
           fi
 
       - name: Run script
         env:
-          TELEGRAM_BOT_TOKEN_AMZBR: ${{ secrets.TELEGRAM_BOT_TOKEN_AMZBR }}
-          RSS_FEED_URLAMZBR: ${{ secrets.RSS_FEED_URLAMZBR }}
-          TELEGRAM_CHAT_IDAMZBR: ${{ secrets.TELEGRAM_CHAT_IDAMZBR }}
-        run: python send_rss_to_telegram_AMZBR.py
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RSS_FEED_URL: ${{ secrets.RSS_FEED_URL }}
+        run: python send_rss_to_telegram.py
 
-      - name: Upload log file
-        uses: actions/upload-artifact@v2
+        jobs:
+  install_triggers:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Use Node.js 14.x
+        uses: actions/setup-node@v2
         with:
-          name: rss-to-telegram-log
-          path: rss_to_telegram.log
+          node-version: '14.x'
 
-      - name: Upload sent items file
-        uses: actions/upload-artifact@v2
-        with:
-          name: sent-items-file
-          path: sent_items.json
-
-      - name: Upload items to cache
+      - name: Install dependencies
         run: |
-          cp sent_items.json ./LivrosAmazonTele/cache/sent_items.json
+          npm install
+          npm install @actionsflow/trigger-schedule
