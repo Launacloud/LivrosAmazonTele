@@ -24,6 +24,22 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests
 
+      - name: Check if cache directory exists
+        run: |
+          if [ ! -d ./LivrosAmazonTele/cache ]; then
+            mkdir -p ./LivrosAmazonTele/cache
+            echo "Cache directory created."
+          fi
+
+      - name: Check if cache file exists
+        run: |
+          if [ -f ./LivrosAmazonTele/cache/sent_items.json ]; then
+            echo "Cache file exists."
+            python send_rss_to_telegram_AMZBR.py --cache ./LivrosAmazonTele/cache/sent_items.json
+          else
+            echo "Cache file does not exist. Skipping script execution."
+          fi
+
       - name: Run script
         env:
           TELEGRAM_BOT_TOKEN_AMZBR: ${{ secrets.TELEGRAM_BOT_TOKEN_AMZBR }}
@@ -43,30 +59,6 @@ jobs:
           name: sent-items-file
           path: sent_items.json
 
-  build_actionsflow:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Use Node.js 14.x
-        uses: actions/setup-node@v2
-        with:
-          node-version: '14.x'
-
-      - name: Cache Node.js modules
-        uses: actions/cache@v2
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      - name: Install dependencies
+      - name: Upload items to cache
         run: |
-          npm install
-          npm install @actionsflow/trigger-schedule
-
-      - name: Build Actionsflow
-        run: npx actionsflow build --include -f false --verbose false --json-secrets '${{ secrets.YOUR_SECRETS_HERE }}' --json-github '${{ toJson(github) }}'
+          cp sent_items.json ./LivrosAmazonTele/cache/sent_items.json
