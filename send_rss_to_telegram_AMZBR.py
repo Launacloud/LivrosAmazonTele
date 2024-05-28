@@ -82,6 +82,8 @@ def fetch_sent_items():
     if response.status_code != 200:
         print(f"Failed to fetch sent items: {response.status_code}")
         return []
+    if not response.content:
+        return []
     return json.loads(response.content)
 
 def save_sent_item(item):
