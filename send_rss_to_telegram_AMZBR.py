@@ -49,8 +49,22 @@ def parse_json_feed(feed_url):
         return []
     
     feed_data = response.json()
-    return feed_data.get('items', [])
+items = []
+for entry in feed_data.get('items', []):
+    title = entry.get('title', '')
+    link = entry.get('link', '')  # Default to empty string if 'link' is not present
+    if 'link' not in entry:  # Check if 'link' is not present
+        link = entry.get('url', '')  # Assign the value of 'url' to 'link' if 'link' is not present
+    description = entry.get('description', '')
+    pub_date = entry.get('pub_date', '')
+    items.append({
+        'title': title,
+        'link': link,
+        'description': description,
+        'pub_date': pub_date
+    })
 
+    return items
 def main():
     """Main function to fetch feeds, check for new items, and send them to Telegram."""
     # Fetch XML feed
