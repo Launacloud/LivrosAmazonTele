@@ -39,12 +39,12 @@ def send_rss_to_telegram():
     sent_message_ids = load_sent_message_ids()
     new_sent_message_ids = []
 
-    for entry in feed.entries:
-        entry_id = entry.id
-        if entry_id not in sent_message_ids:
-            title = entry.title
-            link = entry.link
-            description = entry.summary  # Added line to retrieve entry description
+        for item in json_feed['items']:
+        item_id = item['id']
+        if item_id not in sent_message_ids:
+            title = item['title']
+            link = item['url']
+            summary = item['content_html']
             message = f"<b>{title}</b>\n{link}\n\n{description}"  # Added description to the message
             send_telegram_message(message)
             new_sent_message_ids.append(entry_id)
