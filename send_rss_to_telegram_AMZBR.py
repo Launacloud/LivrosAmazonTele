@@ -44,7 +44,8 @@ def send_rss_to_telegram():
         if entry_id not in sent_message_ids:
             title = entry.title
             link = entry.link
-            message = f"<b>{title}</b>\n{link}"
+            description = entry.summary  # Added line to retrieve entry description
+            message = f"<b>{title}</b>\n{link}\n\n{description}"  # Added description to the message
             send_telegram_message(message)
             new_sent_message_ids.append(entry_id)
             # To avoid sending too many messages at once, we can break after sending a few messages.
