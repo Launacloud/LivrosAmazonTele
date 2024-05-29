@@ -76,7 +76,7 @@ def main():
     if os.path.exists(CACHE_FILE_PATH):
         with open(CACHE_FILE_PATH, 'r') as cache_file:
             try:
-                cached_data = set(tuple(item) for item in json.load(cache_file))
+                cached_data = {tuple(item.items()) for item in json.load(cache_file)}
                 print("Cache loaded successfully.")
             except json.JSONDecodeError:
                 print("Error decoding cache file. Skipping cache loading.")
@@ -93,40 +93,4 @@ def main():
 
     # Fetch feed
     response = requests.head(RSS_FEED_URL)  # Send a HEAD request to get the content type
-    content_type = response.headers.get('content-type')
-
-    if 'xml' in content_type:
-        print("Content Type is XML.")
-        feed_items = parse_xml_feed(RSS_FEED_URL)
-    elif 'json' in content_type:
-        print("Content Type is JSON.")
-        feed_items = parse_json_feed(RSS_FEED_URL)
-    else:
-        print("Unsupported content type.")
-        return
-
-    if not feed_items:
-        print("No feed items found or failed to parse feeds.")
-        return
-
-    # Get new items by comparing with cached items
-    new_items = [item for item in feed_items if tuple(item.items()) not in cached_data]
-
-    if not new_items:
-        print("No new feed items found since last run.")
-        return
-
-    # Send new items
-    for item in new_items:
-        url = item.get('url') or item.get('link')
-        message = f"<b>{item['title']}</b>\n{url}\n{item.get('description', '')}"
-        send_message(TELEGRAM_BOT_TOKEN, CHAT_ID, message)
-        print(f"Sent message: {message}")
-
-    # Update the cache with the titles of the sent items
-    cached_data.update(tuple(item.items()) for item in new_items)
-    with open(CACHE_FILE_PATH, 'w') as cache_file:
-        json.dump([dict(item) for item in cached_data], cache_file)
-
-if __name__ == "__main__":
-    main()
+    content_type = response.headers.get('co
