@@ -20,18 +20,21 @@ def send_telegram_message(message):
     response = requests.post(url, data=payload)
     if response.status_code != 200:
         raise Exception(f"Error sending message: {response.text}")
+    print("Message sent successfully.")
 
 # Function to load sent message IDs from cache
 def load_sent_message_ids():
     if os.path.exists(CACHE_FILE):
         with open(CACHE_FILE, 'r') as f:
             return json.load(f)
+    print("Cache file not found.")
     return []
 
 # Function to save sent message IDs to cache
 def save_sent_message_ids(sent_message_ids):
     with open(CACHE_FILE, 'w') as f:
         json.dump(sent_message_ids, f)
+    print("Sent message IDs saved to cache.")
 
 # Function to parse the RSS feed and send new entries to Telegram
 def send_rss_to_telegram():
@@ -39,12 +42,12 @@ def send_rss_to_telegram():
     sent_message_ids = load_sent_message_ids()
     new_sent_message_ids = []
 
-        for item in json_feed['items']:
-        item_id = item['id']
-        if item_id not in sent_message_ids:
-            title = item['title']
-            link = item['url']
-            summary = item['content_html']
+    for entry in feed.entries:
+        entry_id = entry.id
+        if entry_id not in sent_message_ids:
+            title = entry.title
+            link = entry.link
+            description = entry.description  # Change 'summary' to 'description'
             message = f"<b>{title}</b>\n{link}\n\n{description}"  # Added description to the message
             send_telegram_message(message)
             new_sent_message_ids.append(entry_id)
@@ -56,4 +59,6 @@ def send_rss_to_telegram():
     save_sent_message_ids(sent_message_ids + new_sent_message_ids)
 
 if __name__ == "__main__":
+    print("Starting the RSS to Telegram script.")
     send_rss_to_telegram()
+    print("Script execution completed.")
